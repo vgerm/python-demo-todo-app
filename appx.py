@@ -144,6 +144,16 @@ def about():
 	return render_template('about.html',t=title,h=heading)
 
 
+@app.route("/api/v1/about")
+def api_about():
+	return jsonify( { 'Author': "Vladimir Germanov", "Description": "Python TODO demo app with Flask and Mongodb", "Version": "v0.1" } )
+
+
+@app.route("/api/v1/app_ping")
+def api_app_ping():
+	return "APPPONG"
+
+
 if __name__ == "__main__":
     app.run(host=APP_SERVER, port=int(APP_PORT), debug=True)
 	# Careful with the debug mode..
