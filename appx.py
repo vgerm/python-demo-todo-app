@@ -1,9 +1,22 @@
 import os
+import datetime
+import json
 from flask import Flask, render_template,request,redirect,url_for,make_response,jsonify # For flask implementation
 from pymongo import MongoClient # Database connector
 from bson.objectid import ObjectId # For ObjectId to work
 from bson.errors import InvalidId # For catching InvalidId exception for ObjectId
 
+class JSONEncoder(json.JSONEncoder):
+    ''' extend json-encoder class'''
+
+    def default(self, o):
+        if isinstance(o, ObjectId):
+            return str(o)
+        if isinstance(o, datetime.datetime):
+            return str(o)
+        return json.JSONEncoder.default(self, o)
+
+# Get OS ENV
 if os.environ.get('APP_PORT') is not None:
 	APP_PORT = os.environ.get('APP_PORT')
 else:
@@ -24,19 +37,20 @@ if os.environ.get('MONGODB_PORT') is not None:
 else:
 	MONGODB_PORT = 27017
 
-# if os.environ.get('MONGODB_DB') is not None:
-# 	MONGODB_DB = os.environ.get('MONGODB_DB')
-# else:
-# 	MONGODB_DB = "germanov"
-
+# Define variables
 client = MongoClient(MONGODB_SERVER, int(MONGODB_PORT)) #Configure the connection to the database
 db = client.germanov #Select the database
 todos = db.todo #Select the collection
+author = "Vladimir Germanov"
+description = "Python TODO demo app with Flask and Mongodb"
+version = "v0.3"
 
 app = Flask(__name__)
 title = "Python TODO demo app with Flask and Mongodb - Vladimir Germanov"
 heading = "TODO Reminder"
 
+# use the modified encoder class to handle ObjectId & datetime object while jsonifying the response.
+app.json_encoder = JSONEncoder
 
 def redirect_url():
     return request.args.get('next') or \
@@ -52,13 +66,41 @@ def lists ():
 	return render_template('index.html',a1=a1,todos=todos_l,t=title,h=heading)
 
 
+@app.route("/api/v1/list", methods=['GET'])
+def api_lists ():
+        result = { "todos" : [] }
+        #Display the all Tasks
+        todos_l = todos.find()
+        if todos_l.count() != 0:
+            for todo in todos_l:
+                result['todos'].append(todo)
+            return jsonify(result)
+        else:
+            return jsonify( { "result": "No Tasks!" } )
+
+
 @app.route("/")
+
+
 @app.route("/uncompleted")
-def tasks ():
+def uncompleted ():
 	#Display the Uncompleted Tasks
 	todos_l = todos.find({"done":"no"})
 	a2="active"
 	return render_template('index.html',a2=a2,todos=todos_l,t=title,h=heading)
+
+
+@app.route("/api/v1/uncompleted", methods=['GET'])
+def api_uncompleted ():
+	result = { "todos" : [] }
+	#Display the Uncompleted Tasks
+	todos_l = todos.find({"done":"no"})
+	if todos_l.count() != 0:
+		for todo in todos_l:
+			result['todos'].append(todo)
+		return jsonify(result)
+	else:
+		return jsonify( { "result": "No UnCompleted Tasks!" } )
 
 
 @app.route("/completed")
@@ -67,6 +109,19 @@ def completed ():
 	todos_l = todos.find({"done":"yes"})
 	a3="active"
 	return render_template('index.html',a3=a3,todos=todos_l,t=title,h=heading)
+
+
+@app.route("/api/v1/completed", methods=['GET'])
+def api_completed ():
+	result = { "todos" : [] }
+	#Display the Completed Tasks
+	todos_l = todos.find({"done":"yes"})
+	if todos_l.count() != 0:
+		for todo in todos_l:
+				result['todos'].append(todo)
+		return jsonify(result)
+	else:
+		return jsonify( { "result": "No Completed Tasks!" } )
 
 
 @app.route("/done")
@@ -141,19 +196,28 @@ def search():
 
 @app.route("/about")
 def about():
-	return render_template('about.html',t=title,h=heading)
+	return render_template('about.html',t=title,h=heading,author=author,desc=description,ver=version)
 
 
-@app.route("/api/v1/about")
+@app.route("/api/v1/about", methods=['GET'])
 def api_about():
-	return jsonify( { 'Author': "Vladimir Germanov", "Description": "Python TODO demo app with Flask and Mongodb", "Version": "v0.1" } )
+	return jsonify( { "Author": author, "Description": description, "Version": version } )
 
 
-@app.route("/api/v1/app_ping")
+@app.route("/api/v1/app_ping", methods=['GET'])
 def api_app_ping():
 	return "APPPONG"
 
 
+@app.errorhandler(400)
+def not_found_400(error):
+    return make_response(jsonify( { 'error': 'Bad request' } ), 400)
+
+@app.errorhandler(404)
+def not_found_404(error):
+    return make_response(jsonify( { 'error': 'Not found' } ), 404)
+
+
 if __name__ == "__main__":
     app.run(host=APP_SERVER, port=int(APP_PORT), debug=True)
-	# Careful with the debug mode..
+	# Careful with the debug mode...
