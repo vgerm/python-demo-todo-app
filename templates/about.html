@@ -1,0 +1,25 @@
+<html>
+	<head>
+		<title>{{t}}</title>
+		<style>
+			body {
+				background-color:white;
+			}
+			.credits {
+				margin:10px;
+			}
+		</style>
+		<link rel="stylesheet" type="text/css"  href="{{ url_for('static',filename='assets/emoji.css')}}" >
+		<script src="{{ url_for('static',filename='assets/twemoji.min.js')}}"></script>  
+		<script src="{{ url_for('static',filename='assets/emoji.js')}}"></script>
+	</head>
+<body>
+	<a href="/"><h1>{{ h }}</h1></a>
+	<hr>
+	<h3>Author :</h3>
+	<div class='credits'>
+		Vladimir Germanov<br>
+		vladimir.germanov@embedit.cz		
+	</div>
+</body>
+</html>
