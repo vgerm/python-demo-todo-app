@@ -148,6 +148,19 @@ def action ():
 	return redirect("/list")
 
 
+@app.route("/api/v1/action", methods=['POST'])
+def api_action ():
+	#Adding a Task
+	name = request.json['name']
+	desc = request.json['desc']
+	date = request.json['date']
+	pr = request.json['pr']
+	todo_id = todos.insert({ "name":name, "desc":desc, "date":date, "pr":pr, "done":"no" })
+	new_todo = todos.find_one({'_id': todo_id })
+	output = {'name' : new_todo['name'], 'desc' : new_todo['desc'], 'date' : new_todo['date'], 'pr' : new_todo['pr']}
+	return jsonify({'result' : output})
+
+
 @app.route("/remove")
 def remove ():
 	#Deleting a Task with various references
@@ -216,6 +229,22 @@ def not_found_400(error):
 @app.errorhandler(404)
 def not_found_404(error):
     return make_response(jsonify( { 'error': 'Not found' } ), 404)
+
+
+@app.route("/api/v1/inventory", methods=['GET'])
+def api_inventory():
+	return jsonify( { 
+		"servers": [
+			{ "host": "server01", "tag": "lb" },
+			{ "host": "server02", "tag": "app" },
+			{ "host": "server03", "tag": "db" },
+			{ "host": "server04", "tag": "web" },
+			{ "host": "server05", "tag": "web" },
+			{ "host": "server06", "tag": "test" },
+			{ "host": "server07", "tag": "test" },
+			{ "host": "server08", "tag": "test" },
+			{ "host": "server09", "tag": "web" },
+			]} )
 
 
 if __name__ == "__main__":
